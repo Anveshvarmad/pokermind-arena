@@ -1,46 +1,290 @@
+import { useState } from "react";
 import "./App.css";
 
-function App() {
+import {
+  applyPlayerAction,
+  createGame,
+  nextStreet,
+  resetGame,
+} from "./lib/api";
+import type { Card, GameState, PokerAction, Player } from "./types/game";
+
+function PlayingCard({ card, hidden = false }: { card?: Card; hidden?: boolean }) {
+  if (hidden || !card) {
+    return <div className="playing-card card-back" />;
+  }
+
+  const isRed = card.suit === "hearts" || card.suit === "diamonds";
+
   return (
-    <main className="app-shell">
-      <section className="hero">
-        <div className="badge">Phase 0 Live</div>
+    <div className={`playing-card ${isRed ? "red-card" : "black-card"}`}>
+      <span>{card.rank}</span>
+      <strong>{card.display.replace(card.rank, "")}</strong>
+    </div>
+  );
+}
 
-        <h1>PokerMind Arena</h1>
+function PlayerPanel({
+  player,
+  isCurrent,
+  hideCards,
+}: {
+  player: Player;
+  isCurrent: boolean;
+  hideCards: boolean;
+}) {
+  return (
+    <div className={`player-panel ${isCurrent ? "active-player" : ""}`}>
+      <div>
+        <p className="player-name">{player.name}</p>
+        <p className="player-stack">${player.stack}</p>
+      </div>
 
-        <p className="subtitle">
-          An AI-powered Texas Hold&apos;em strategy simulator with a custom poker
-          engine, intelligent bots, game replay, and analytics dashboard.
-        </p>
+      <div className="hole-cards">
+        {player.hole_cards.map((card, index) => (
+          <PlayingCard
+            key={`${card.display}-${index}`}
+            card={card}
+            hidden={hideCards}
+          />
+        ))}
+      </div>
 
-        <div className="hero-actions">
-          <button>Start Game</button>
-          <button className="secondary">View AI Dashboard</button>
+      <div className="player-meta">
+        <span>Bet: ${player.current_bet}</span>
+        {player.folded && <span className="danger">Folded</span>}
+        {player.all_in && <span className="gold">All In</span>}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [game, setGame] = useState<GameState | null>(null);
+  const [raiseTo, setRaiseTo] = useState(60);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function runAction(action: () => Promise<GameState>) {
+    try {
+      setLoading(true);
+      setError("");
+
+      const updatedGame = await action();
+
+      setGame(updatedGame);
+      setRaiseTo(Math.max(updatedGame.highest_bet + updatedGame.big_blind, 40));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unexpected error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleStartGame() {
+    runAction(() => createGame());
+  }
+
+  function handleResetGame() {
+    if (!game) return;
+
+    runAction(() => resetGame(game.game_id));
+  }
+
+  function handleNextStreet() {
+    if (!game) return;
+
+    runAction(() => nextStreet(game.game_id));
+  }
+
+  function handlePlayerAction(action: PokerAction) {
+    if (!game) return;
+
+    runAction(() =>
+      applyPlayerAction(game.game_id, {
+        player_index: game.current_player_index,
+        action,
+        amount: action === "raise" ? raiseTo : undefined,
+      }),
+    );
+  }
+
+  const currentPlayer = game?.players[game.current_player_index];
+  const canMoveStreet =
+    game &&
+    game.street !== "waiting" &&
+    game.street !== "showdown" &&
+    !game.hand_complete;
+
+  return (
+    <main className="page">
+      <section className="hero-section">
+        <div>
+          <p className="eyebrow">AI Poker Simulator</p>
+          <h1>PokerMind Arena</h1>
+          <p className="subtitle">
+            Play through a Texas Hold&apos;em hand, inspect every game state, and
+            prepare the foundation for rule-based, Monte Carlo, and MCTS poker AI.
+          </p>
+        </div>
+
+        <div className="hero-buttons">
+          <button onClick={handleStartGame} disabled={loading}>
+            {game ? "New Game" : "Start Game"}
+          </button>
+
+          {game && (
+            <button className="secondary-button" onClick={handleResetGame} disabled={loading}>
+              Reset Hand
+            </button>
+          )}
         </div>
       </section>
 
-      <section className="table-preview">
-        <div className="poker-table">
-          <div className="player top-player">
-            <span>AI Bot</span>
-            <strong>$1,000</strong>
+      {error && <div className="error-box">{error}</div>}
+
+      <section className="game-layout">
+        <div className="table-card">
+          <div className="stats-strip">
+            <div>
+              <span>Street</span>
+              <strong>{game?.street ?? "not started"}</strong>
+            </div>
+
+            <div>
+              <span>Pot</span>
+              <strong>${game?.pot ?? 0}</strong>
+            </div>
+
+            <div>
+              <span>To Call</span>
+              <strong>${game?.call_amount ?? 0}</strong>
+            </div>
+
+            <div>
+              <span>Deck</span>
+              <strong>{game?.deck_remaining ?? 52}</strong>
+            </div>
           </div>
 
-          <div className="pot">Pot: $0</div>
+          <div className="poker-table">
+            {game ? (
+              <>
+                <div className="seat top-seat">
+                  <PlayerPanel
+                    player={game.players[1]}
+                    isCurrent={game.current_player_index === 1}
+                    hideCards={game.street !== "showdown"}
+                  />
+                </div>
 
-          <div className="community-cards">
-            <div className="card back"></div>
-            <div className="card back"></div>
-            <div className="card back"></div>
-            <div className="card back"></div>
-            <div className="card back"></div>
-          </div>
+                <div className="center-board">
+                  <div className="pot-chip">Pot ${game.pot}</div>
 
-          <div className="player bottom-player">
-            <span>You</span>
-            <strong>$1,000</strong>
+                  <div className="community-row">
+                    {[0, 1, 2, 3, 4].map((index) => (
+                      <PlayingCard
+                        key={index}
+                        card={game.community_cards[index]}
+                        hidden={!game.community_cards[index]}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="seat bottom-seat">
+                  <PlayerPanel
+                    player={game.players[0]}
+                    isCurrent={game.current_player_index === 0}
+                    hideCards={false}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="empty-state">
+                <h2>No hand started yet</h2>
+                <p>Click Start Game to deal hole cards and post blinds.</p>
+              </div>
+            )}
           </div>
         </div>
+
+        <aside className="control-panel">
+          <div className="panel-block">
+            <h2>Game Controls</h2>
+
+            {game ? (
+              <>
+                <p className="turn-label">
+                  Current Turn: <strong>{currentPlayer?.name}</strong>
+                </p>
+
+                <div className="action-grid">
+                  <button
+                    className="danger-button"
+                    disabled={loading || !game.available_actions.includes("fold")}
+                    onClick={() => handlePlayerAction("fold")}
+                  >
+                    Fold
+                  </button>
+
+                  <button
+                    disabled={loading || !game.available_actions.includes("check")}
+                    onClick={() => handlePlayerAction("check")}
+                  >
+                    Check
+                  </button>
+
+                  <button
+                    disabled={loading || !game.available_actions.includes("call")}
+                    onClick={() => handlePlayerAction("call")}
+                  >
+                    Call ${game.call_amount}
+                  </button>
+                </div>
+
+                <div className="raise-box">
+                  <label htmlFor="raiseTo">Raise To</label>
+                  <input
+                    id="raiseTo"
+                    type="number"
+                    min={game.highest_bet + game.big_blind}
+                    value={raiseTo}
+                    onChange={(event) => setRaiseTo(Number(event.target.value))}
+                  />
+                  <button
+                    disabled={loading || !game.available_actions.includes("raise")}
+                    onClick={() => handlePlayerAction("raise")}
+                  >
+                    Raise
+                  </button>
+                </div>
+
+                <button
+                  className="wide-button secondary-button"
+                  disabled={loading || !canMoveStreet}
+                  onClick={handleNextStreet}
+                >
+                  Deal Next Street
+                </button>
+              </>
+            ) : (
+              <p className="muted-text">
+                Start a game to unlock poker actions.
+              </p>
+            )}
+          </div>
+
+          <div className="panel-block">
+            <h2>Current State</h2>
+
+            {game ? (
+              <pre>{JSON.stringify(game, null, 2)}</pre>
+            ) : (
+              <p className="muted-text">Game state will appear here.</p>
+            )}
+          </div>
+        </aside>
       </section>
     </main>
   );

@@ -5,9 +5,9 @@
 body {
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(38, 166, 154, 0.35), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(20, 83, 45, 0.5), transparent 38%),
-    #050b0a;
+    radial-gradient(circle at top left, rgba(45, 212, 191, 0.25), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.35), transparent 40%),
+    #030712;
   color: white;
   font-family:
     Inter,
@@ -18,155 +18,285 @@ body {
     sans-serif;
 }
 
-.app-shell {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  align-items: center;
-  gap: 48px;
-  padding: 64px;
-}
-
-.hero {
-  max-width: 620px;
-}
-
-.badge {
-  width: fit-content;
-  padding: 8px 14px;
-  border: 1px solid rgba(94, 234, 212, 0.35);
-  border-radius: 999px;
-  background: rgba(20, 184, 166, 0.12);
-  color: #99f6e4;
-  font-size: 14px;
-  margin-bottom: 24px;
-}
-
-h1 {
-  font-size: clamp(48px, 7vw, 92px);
-  line-height: 0.95;
-  margin: 0;
-  letter-spacing: -0.06em;
-}
-
-.subtitle {
-  margin-top: 24px;
-  color: #cbd5e1;
-  font-size: 19px;
-  line-height: 1.7;
-}
-
-.hero-actions {
-  margin-top: 36px;
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
 button {
   border: none;
   border-radius: 14px;
-  padding: 14px 22px;
+  padding: 13px 18px;
   background: #2dd4bf;
   color: #042f2e;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 18px 40px rgba(45, 212, 191, 0.2);
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease,
+    box-shadow 0.18s ease;
+  box-shadow: 0 16px 40px rgba(45, 212, 191, 0.18);
 }
 
-button.secondary {
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.page {
+  min-height: 100vh;
+  padding: 42px;
+}
+
+.hero-section {
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  align-items: flex-end;
+  margin-bottom: 34px;
+}
+
+.eyebrow {
+  color: #5eead4;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(46px, 6vw, 86px);
+  letter-spacing: -0.07em;
+  line-height: 0.92;
+}
+
+.subtitle {
+  max-width: 760px;
+  color: #cbd5e1;
+  font-size: 18px;
+  line-height: 1.65;
+  margin: 22px 0 0;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.secondary-button {
   background: rgba(255, 255, 255, 0.08);
-  color: white;
+  color: #f8fafc;
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: none;
 }
 
-.table-preview {
-  display: flex;
-  justify-content: center;
+.danger-button {
+  background: rgba(248, 113, 113, 0.95);
+  color: #450a0a;
+}
+
+.error-box {
+  margin-bottom: 24px;
+  padding: 16px 18px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(127, 29, 29, 0.45);
+  color: #fecaca;
+  border-radius: 16px;
+  font-weight: 700;
+}
+
+.game-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 24px;
+  align-items: start;
+}
+
+.table-card,
+.control-panel {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.68);
+  border-radius: 28px;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.34);
+}
+
+.table-card {
+  padding: 22px;
+}
+
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.stats-strip div {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.stats-strip span {
+  display: block;
+  color: #94a3b8;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+
+.stats-strip strong {
+  font-size: 21px;
+  text-transform: capitalize;
 }
 
 .poker-table {
-  width: min(680px, 90vw);
-  height: 420px;
-  border-radius: 220px;
-  background:
-    radial-gradient(circle, rgba(20, 184, 166, 0.24), transparent 58%),
-    linear-gradient(135deg, #064e3b, #022c22);
-  border: 18px solid #3f1d0b;
-  box-shadow:
-    inset 0 0 80px rgba(0, 0, 0, 0.45),
-    0 35px 100px rgba(0, 0, 0, 0.55);
+  min-height: 610px;
   position: relative;
+  border-radius: 320px;
+  background:
+    radial-gradient(circle, rgba(20, 184, 166, 0.28), transparent 55%),
+    linear-gradient(135deg, #065f46, #022c22);
+  border: 18px solid #4a250f;
+  box-shadow:
+    inset 0 0 95px rgba(0, 0, 0, 0.42),
+    0 30px 80px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
 }
 
-.player {
+.poker-table::before {
+  content: "";
   position: absolute;
+  inset: 28px;
+  border-radius: inherit;
+  border: 2px dashed rgba(255, 255, 255, 0.14);
+}
+
+.seat {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.top-seat {
+  top: 28px;
+}
+
+.bottom-seat {
+  bottom: 28px;
+}
+
+.player-panel {
+  min-width: 320px;
+  padding: 15px 18px;
+  border-radius: 22px;
+  background: rgba(2, 6, 23, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.32);
+}
+
+.active-player {
+  border-color: rgba(45, 212, 191, 0.8);
+  box-shadow:
+    0 0 0 4px rgba(45, 212, 191, 0.14),
+    0 22px 50px rgba(0, 0, 0, 0.35);
+}
+
+.player-name {
+  margin: 0 0 4px;
+  color: #e2e8f0;
+  font-weight: 900;
+}
+
+.player-stack {
+  margin: 0;
+  color: #5eead4;
+  font-weight: 900;
+  font-size: 20px;
+}
+
+.player-meta {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.danger {
+  color: #fca5a5;
+}
+
+.gold {
+  color: #fde68a;
+}
+
+.hole-cards,
+.community-row {
+  display: flex;
+  gap: 9px;
+}
+
+.center-board {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 18px;
+  justify-items: center;
+  z-index: 1;
+}
+
+.pot-chip {
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.16);
+  border: 1px solid rgba(250, 204, 21, 0.38);
+  color: #fde68a;
+  font-weight: 900;
+}
+
+.playing-card {
+  width: 62px;
+  height: 86px;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #020617;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  background: rgba(15, 23, 42, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 12px 22px;
-  border-radius: 18px;
-  min-width: 130px;
+  justify-content: space-between;
+  padding: 8px;
+  font-weight: 950;
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.34);
+  border: 1px solid rgba(15, 23, 42, 0.2);
 }
 
-.player span {
-  color: #cbd5e1;
-  font-size: 14px;
+.playing-card strong {
+  align-self: flex-end;
+  font-size: 24px;
 }
 
-.player strong {
-  color: #f8fafc;
+.red-card {
+  color: #dc2626;
 }
 
-.top-player {
-  top: 28px;
-  left: 50%;
-  transform: translateX(-50%);
+.black-card {
+  color: #020617;
 }
 
-.bottom-player {
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.pot {
-  position: absolute;
-  top: 128px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(250, 204, 21, 0.16);
-  border: 1px solid rgba(250, 204, 21, 0.35);
-  color: #fde68a;
-  padding: 8px 16px;
-  border-radius: 999px;
-  font-weight: 800;
-}
-
-.community-cards {
-  position: absolute;
-  display: flex;
-  gap: 12px;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.card {
-  width: 64px;
-  height: 90px;
-  border-radius: 10px;
-  background: white;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
-}
-
-.card.back {
+.card-back {
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.14), transparent),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent),
     repeating-linear-gradient(
       45deg,
       #0f766e,
@@ -174,21 +304,143 @@ button.secondary {
       #115e59 8px,
       #115e59 16px
     );
-  border: 2px solid rgba(255, 255, 255, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.45);
 }
 
-@media (max-width: 900px) {
-  .app-shell {
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  z-index: 3;
+}
+
+.empty-state h2 {
+  margin: 0 0 8px;
+  font-size: 32px;
+}
+
+.empty-state p,
+.muted-text {
+  color: #94a3b8;
+}
+
+.control-panel {
+  padding: 20px;
+  display: grid;
+  gap: 18px;
+}
+
+.panel-block {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.panel-block h2 {
+  margin: 0 0 16px;
+}
+
+.turn-label {
+  color: #cbd5e1;
+}
+
+.turn-label strong {
+  color: #5eead4;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 11px;
+  margin: 18px 0;
+}
+
+.raise-box {
+  display: grid;
+  grid-template-columns: 1fr 110px;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.raise-box label {
+  grid-column: 1 / -1;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(15, 23, 42, 0.9);
+  color: white;
+  border-radius: 14px;
+  padding: 13px;
+  font-size: 16px;
+  outline: none;
+}
+
+.wide-button {
+  width: 100%;
+}
+
+pre {
+  max-height: 360px;
+  overflow: auto;
+  margin: 0;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(2, 6, 23, 0.9);
+  color: #bfdbfe;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+@media (max-width: 1100px) {
+  .game-layout {
     grid-template-columns: 1fr;
-    padding: 32px;
+  }
+
+  .hero-section {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: 24px;
+  }
+
+  .stats-strip {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .poker-table {
-    height: 340px;
+    min-height: 520px;
+    border-width: 12px;
   }
 
-  .card {
+  .player-panel {
+    min-width: 260px;
+  }
+
+  .playing-card {
     width: 48px;
     height: 70px;
+  }
+
+  .action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .raise-box {
+    grid-template-columns: 1fr;
   }
 }
