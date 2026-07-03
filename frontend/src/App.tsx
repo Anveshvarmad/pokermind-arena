@@ -9,8 +9,10 @@ import {
   createGame,
   nextStreet,
   resetGame,
+  runSimulation,
 } from "./lib/api";
 import type { Card, GameState, PokerAction, Player } from "./types/game";
+import type { SimulationResult, StrategyName } from "./types/simulation";
 
 function PlayingCard({ card, hidden = false }: { card?: Card; hidden?: boolean }) {
   if (hidden || !card) {
@@ -62,13 +64,206 @@ function PlayerPanel({
   );
 }
 
+function StrategyLabel({ value }: { value: string }) {
+  return <span>{value.replace("_", " ")}</span>;
+}
+
+function MiniBankrollChart({ result }: { result: SimulationResult }) {
+  const points = result.bankroll_history.filter((_, index) => index % Math.max(1, Math.floor(result.bankroll_history.length / 28)) === 0);
+  const minValue = Math.min(...points.map((point) => Math.min(point.player_a, point.player_b)));
+  const maxValue = Math.max(...points.map((point) => Math.max(point.player_a, point.player_b)));
+  const range = Math.max(1, maxValue - minValue);
+
+  return (
+    <div className="mini-chart">
+      {points.map((point) => {
+        const playerAHeight = 18 + ((point.player_a - minValue) / range) * 110;
+        const playerBHeight = 18 + ((point.player_b - minValue) / range) * 110;
+
+        return (
+          <div className="chart-group" key={point.hand}>
+            <div className="bar player-a-bar" style={{ height: `${playerAHeight}px` }} />
+            <div className="bar player-b-bar" style={{ height: `${playerBHeight}px` }} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SimulationDashboard({
+  result,
+  hands,
+  setHands,
+  playerAStrategy,
+  setPlayerAStrategy,
+  playerBStrategy,
+  setPlayerBStrategy,
+  onRun,
+  loading,
+}: {
+  result: SimulationResult | null;
+  hands: number;
+  setHands: (hands: number) => void;
+  playerAStrategy: StrategyName;
+  setPlayerAStrategy: (strategy: StrategyName) => void;
+  playerBStrategy: StrategyName;
+  setPlayerBStrategy: (strategy: StrategyName) => void;
+  onRun: () => void;
+  loading: boolean;
+}) {
+  const strategies: StrategyName[] = ["rule_based", "monte_carlo", "mcts"];
+
+  return (
+    <section className="simulation-section">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">AI Simulation Lab</p>
+          <h2>Strategy Dashboard</h2>
+          <p>
+            Run AI-vs-AI hands and compare win rates, bankroll movement,
+            actions, and recent outcomes.
+          </p>
+        </div>
+
+        <div className="simulation-controls">
+          <label>
+            Hands
+            <input
+              type="number"
+              min={1}
+              max={1000}
+              value={hands}
+              onChange={(event) => setHands(Number(event.target.value))}
+            />
+          </label>
+
+          <label>
+            Player A
+            <select
+              value={playerAStrategy}
+              onChange={(event) => setPlayerAStrategy(event.target.value as StrategyName)}
+            >
+              {strategies.map((strategy) => (
+                <option key={strategy} value={strategy}>
+                  {strategy.replace("_", " ")}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Player B
+            <select
+              value={playerBStrategy}
+              onChange={(event) => setPlayerBStrategy(event.target.value as StrategyName)}
+            >
+              {strategies.map((strategy) => (
+                <option key={strategy} value={strategy}>
+                  {strategy.replace("_", " ")}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button onClick={onRun} disabled={loading}>
+            Run Simulation
+          </button>
+        </div>
+      </div>
+
+      {result && (
+        <div className="dashboard-grid">
+          <div className="metric-card">
+            <span>Player A</span>
+            <strong>{Math.round(result.win_rates.player_a * 100)}%</strong>
+            <p>
+              <StrategyLabel value={result.player_a_strategy} /> · {result.wins.player_a} wins · ${result.final_bankroll.player_a}
+            </p>
+          </div>
+
+          <div className="metric-card">
+            <span>Player B</span>
+            <strong>{Math.round(result.win_rates.player_b * 100)}%</strong>
+            <p>
+              <StrategyLabel value={result.player_b_strategy} /> · {result.wins.player_b} wins · ${result.final_bankroll.player_b}
+            </p>
+          </div>
+
+          <div className="metric-card">
+            <span>Ties</span>
+            <strong>{Math.round(result.win_rates.tie * 100)}%</strong>
+            <p>{result.wins.tie} tied hands out of {result.hands}</p>
+          </div>
+
+          <div className="chart-card">
+            <h3>Bankroll Trend</h3>
+            <MiniBankrollChart result={result} />
+            <div className="legend">
+              <span><b className="legend-a" /> Player A</span>
+              <span><b className="legend-b" /> Player B</span>
+            </div>
+          </div>
+
+          <div className="action-card">
+            <h3>Action Distribution</h3>
+
+            <div className="action-columns">
+              <div>
+                <h4>Player A</h4>
+                {Object.entries(result.action_distribution.player_a).map(([action, count]) => (
+                  <p key={action}>
+                    <span>{action}</span>
+                    <strong>{count}</strong>
+                  </p>
+                ))}
+              </div>
+
+              <div>
+                <h4>Player B</h4>
+                {Object.entries(result.action_distribution.player_b).map(([action, count]) => (
+                  <p key={action}>
+                    <span>{action}</span>
+                    <strong>{count}</strong>
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="recent-card">
+            <h3>Recent Hands</h3>
+
+            <div className="recent-list">
+              {result.recent_hands.map((hand) => (
+                <div className="recent-hand" key={hand.hand}>
+                  <strong>Hand #{hand.hand}</strong>
+                  <span>Winner: {hand.winner.replace("_", " ")}</span>
+                  <span>A: {hand.player_a_best_hand.label}</span>
+                  <span>B: {hand.player_b_best_hand.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function App() {
   const [game, setGame] = useState<GameState | null>(null);
   const [raiseTo, setRaiseTo] = useState(60);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function runAction(action: () => Promise<GameState>) {
+  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
+  const [simulationHands, setSimulationHands] = useState(100);
+  const [playerAStrategy, setPlayerAStrategy] = useState<StrategyName>("rule_based");
+  const [playerBStrategy, setPlayerBStrategy] = useState<StrategyName>("monte_carlo");
+  const [simulationLoading, setSimulationLoading] = useState(false);
+
+  async function runGameAction(action: () => Promise<GameState>) {
     try {
       setLoading(true);
       setError("");
@@ -84,44 +279,63 @@ function App() {
     }
   }
 
+  async function handleRunSimulation() {
+    try {
+      setSimulationLoading(true);
+      setError("");
+
+      const result = await runSimulation({
+        hands: simulationHands,
+        player_a_strategy: playerAStrategy,
+        player_b_strategy: playerBStrategy,
+      });
+
+      setSimulationResult(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Simulation failed");
+    } finally {
+      setSimulationLoading(false);
+    }
+  }
+
   function handleStartGame() {
-    runAction(() => createGame());
+    runGameAction(() => createGame());
   }
 
   function handleResetGame() {
     if (!game) return;
 
-    runAction(() => resetGame(game.game_id));
+    runGameAction(() => resetGame(game.game_id));
   }
 
   function handleNextStreet() {
     if (!game) return;
 
-    runAction(() => nextStreet(game.game_id));
+    runGameAction(() => nextStreet(game.game_id));
   }
 
   function handleRuleBotAction() {
     if (!game) return;
 
-    runAction(() => applyAiAction(game.game_id));
+    runGameAction(() => applyAiAction(game.game_id));
   }
 
   function handleMonteCarloAction() {
     if (!game) return;
 
-    runAction(() => applyMonteCarloAction(game.game_id));
+    runGameAction(() => applyMonteCarloAction(game.game_id));
   }
 
   function handleMctsAction() {
     if (!game) return;
 
-    runAction(() => applyMctsAction(game.game_id));
+    runGameAction(() => applyMctsAction(game.game_id));
   }
 
   function handlePlayerAction(action: PokerAction) {
     if (!game) return;
 
-    runAction(() =>
+    runGameAction(() =>
       applyPlayerAction(game.game_id, {
         player_index: game.current_player_index,
         action,
@@ -148,7 +362,7 @@ function App() {
           <p className="eyebrow">AI Poker Simulator</p>
           <h1>PokerMind Arena</h1>
           <p className="subtitle">
-            Play through a Texas Hold&apos;em hand and compare rule-based,
+            Play through Texas Hold&apos;em hands and compare rule-based,
             Monte Carlo, and MCTS poker strategies.
           </p>
         </div>
@@ -401,6 +615,18 @@ function App() {
           </div>
         </aside>
       </section>
+
+      <SimulationDashboard
+        result={simulationResult}
+        hands={simulationHands}
+        setHands={setSimulationHands}
+        playerAStrategy={playerAStrategy}
+        setPlayerAStrategy={setPlayerAStrategy}
+        playerBStrategy={playerBStrategy}
+        setPlayerBStrategy={setPlayerBStrategy}
+        onRun={handleRunSimulation}
+        loading={simulationLoading}
+      />
     </main>
   );
 }

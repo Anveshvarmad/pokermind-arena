@@ -14,3 +14,9 @@ class PlayerActionRequest(BaseModel):
     player_index: int
     action: Literal["fold", "check", "call", "raise"]
     amount: int | None = None
+
+
+class SimulationRequest(BaseModel):
+    hands: int = Field(default=100, ge=1, le=1000)
+    player_a_strategy: Literal["rule_based", "monte_carlo", "mcts"] = "rule_based"
+    player_b_strategy: Literal["rule_based", "monte_carlo", "mcts"] = "monte_carlo"
