@@ -16,6 +16,13 @@ class Street(str, Enum):
     SHOWDOWN = "showdown"
 
 
+class PlayerAction(str, Enum):
+    FOLD = "fold"
+    CHECK = "check"
+    CALL = "call"
+    RAISE = "raise"
+
+
 @dataclass
 class GameState:
     players: list[Player]
@@ -43,7 +50,12 @@ class GameState:
         self._deal_hole_cards()
         self._post_blinds()
 
-        self.current_player_index = self._next_active_player_index(self.dealer_index)
+        if len(self.players) == 2:
+            self.current_player_index = self.dealer_index
+        else:
+            self.current_player_index = self._next_active_player_index(
+                (self.dealer_index + 1) % len(self.players)
+            )
 
     def _deal_hole_cards(self):
         for _ in range(2):
@@ -62,6 +74,92 @@ class GameState:
 
         self.pot += small_blind_amount + big_blind_amount
 
+    def highest_bet(self) -> int:
+        return max(player.current_bet for player in self.players)
+
+    def call_amount(self, player_index: int) -> int:
+        player = self.players[player_index]
+        return max(0, self.highest_bet() - player.current_bet)
+
+    def available_actions(self, player_index: int) -> list[str]:
+        if self.street in {Street.WAITING, Street.SHOWDOWN}:
+            return []
+
+        player = self.players[player_index]
+
+        if player.folded or player.all_in:
+            return []
+
+        to_call = self.call_amount(player_index)
+
+        if to_call == 0:
+            return [PlayerAction.CHECK.value, PlayerAction.RAISE.value, PlayerAction.FOLD.value]
+
+        return [PlayerAction.FOLD.value, PlayerAction.CALL.value, PlayerAction.RAISE.value]
+
+    def apply_action(
+        self,
+        player_index: int,
+        action: PlayerAction,
+        amount: int | None = None,
+    ):
+        if self.street in {Street.WAITING, Street.SHOWDOWN}:
+            raise ValueError("No player action is allowed at this stage")
+
+        if player_index < 0 or player_index >= len(self.players):
+            raise ValueError("Invalid player index")
+
+        if player_index != self.current_player_index:
+            raise ValueError("It is not this player's turn")
+
+        player = self.players[player_index]
+
+        if player.folded:
+            raise ValueError("Folded player cannot act")
+
+        if player.all_in:
+            raise ValueError("All-in player cannot act")
+
+        to_call = self.call_amount(player_index)
+
+        if action == PlayerAction.FOLD:
+            player.fold()
+
+        elif action == PlayerAction.CHECK:
+            if to_call > 0:
+                raise ValueError("Player cannot check while facing a bet")
+
+        elif action == PlayerAction.CALL:
+            if to_call == 0:
+                raise ValueError("Nothing to call")
+
+            committed = player.place_bet(to_call)
+            self.pot += committed
+
+        elif action == PlayerAction.RAISE:
+            if amount is None:
+                raise ValueError("Raise amount is required")
+
+            if amount <= self.highest_bet():
+                raise ValueError("Raise amount must be greater than current highest bet")
+
+            additional_amount = amount - player.current_bet
+
+            if additional_amount <= 0:
+                raise ValueError("Raise amount must increase player's current bet")
+
+            committed = player.place_bet(additional_amount)
+            self.pot += committed
+
+        else:
+            raise ValueError("Unsupported action")
+
+        if len(self.active_players()) == 1:
+            self.street = Street.SHOWDOWN
+            return
+
+        self.current_player_index = self._next_active_player_index(self.current_player_index)
+
     def deal_flop(self):
         self._move_to_next_street(Street.FLOP, 3)
 
@@ -75,6 +173,9 @@ class GameState:
         self.street = Street.SHOWDOWN
 
     def _move_to_next_street(self, street: Street, cards_to_deal: int):
+        if self.street == Street.SHOWDOWN:
+            raise ValueError("Hand is already complete")
+
         self.street = street
 
         for player in self.players:
@@ -99,15 +200,23 @@ class GameState:
         return [player for player in self.players if not player.folded]
 
     def to_dict(self) -> dict:
+        current_player = self.players[self.current_player_index]
+
         return {
             "game_id": self.game_id,
             "hand_number": self.hand_number,
             "street": self.street.value,
             "dealer_index": self.dealer_index,
             "current_player_index": self.current_player_index,
+            "current_player_id": current_player.id,
+            "current_player_name": current_player.name,
             "pot": self.pot,
             "small_blind": self.small_blind,
             "big_blind": self.big_blind,
+            "highest_bet": self.highest_bet(),
+            "call_amount": self.call_amount(self.current_player_index),
+            "available_actions": self.available_actions(self.current_player_index),
+            "hand_complete": self.street == Street.SHOWDOWN or len(self.active_players()) == 1,
             "deck_remaining": self.deck.remaining(),
             "community_cards": [card.to_dict() for card in self.community_cards],
             "players": [player.to_public_dict() for player in self.players],
