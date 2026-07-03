@@ -18,6 +18,13 @@ export type Player = {
   hole_cards: Card[];
 };
 
+export type AiDecision = {
+  action: PokerAction;
+  amount: number | null;
+  confidence: number;
+  reason: string;
+};
+
 export type GameState = {
   game_id: string;
   hand_number: number;
@@ -36,6 +43,7 @@ export type GameState = {
   deck_remaining: number;
   community_cards: Card[];
   players: Player[];
+  ai_decision?: AiDecision;
 };
 
 export type PlayerActionPayload = {

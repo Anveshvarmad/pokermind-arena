@@ -1,3 +1,4 @@
+from app.ai.rule_based_bot import RuleBasedPokerBot
 from app.core.game_state import PlayerAction, Street
 from app.core.table import PokerTable
 
@@ -5,6 +6,7 @@ from app.core.table import PokerTable
 class GameService:
     def __init__(self):
         self.games: dict[str, PokerTable] = {}
+        self.bot = RuleBasedPokerBot()
 
     def create_game(
         self,
@@ -52,6 +54,31 @@ class GameService:
         )
 
         return table.get_state()
+
+    def apply_ai_action(self, game_id: str) -> dict | None:
+        table = self.games.get(game_id)
+
+        if table is None:
+            return None
+
+        state = table.state
+        current_player = state.players[state.current_player_index]
+
+        if "ai" not in current_player.name.lower() and "bot" not in current_player.name.lower():
+            raise ValueError("It is not the AI bot's turn")
+
+        decision = self.bot.decide(state)
+
+        state.apply_action(
+            player_index=state.current_player_index,
+            action=decision.action,
+            amount=decision.amount,
+        )
+
+        response = table.get_state()
+        response["ai_decision"] = decision.to_dict()
+
+        return response
 
     def next_street(self, game_id: str) -> dict | None:
         table = self.games.get(game_id)

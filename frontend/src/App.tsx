@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./App.css";
 
 import {
+  applyAiAction,
   applyPlayerAction,
   createGame,
   nextStreet,
@@ -97,6 +98,12 @@ function App() {
     runAction(() => nextStreet(game.game_id));
   }
 
+  function handleAiAction() {
+    if (!game) return;
+
+    runAction(() => applyAiAction(game.game_id));
+  }
+
   function handlePlayerAction(action: PokerAction) {
     if (!game) return;
 
@@ -110,6 +117,8 @@ function App() {
   }
 
   const currentPlayer = game?.players[game.current_player_index];
+  const isAiTurn = currentPlayer?.name.toLowerCase().includes("ai") || currentPlayer?.name.toLowerCase().includes("bot");
+
   const canMoveStreet =
     game &&
     game.street !== "waiting" &&
@@ -123,8 +132,8 @@ function App() {
           <p className="eyebrow">AI Poker Simulator</p>
           <h1>PokerMind Arena</h1>
           <p className="subtitle">
-            Play through a Texas Hold&apos;em hand, inspect every game state, and
-            prepare the foundation for rule-based, Monte Carlo, and MCTS poker AI.
+            Play through a Texas Hold&apos;em hand, inspect each state transition,
+            and let a rule-based AI bot make explainable poker decisions.
           </p>
         </div>
 
@@ -219,46 +228,57 @@ function App() {
                   Current Turn: <strong>{currentPlayer?.name}</strong>
                 </p>
 
-                <div className="action-grid">
-                  <button
-                    className="danger-button"
-                    disabled={loading || !game.available_actions.includes("fold")}
-                    onClick={() => handlePlayerAction("fold")}
-                  >
-                    Fold
-                  </button>
+                {isAiTurn ? (
+                  <div className="ai-turn-box">
+                    <p>The AI bot is waiting to act.</p>
+                    <button className="wide-button" disabled={loading} onClick={handleAiAction}>
+                      Let AI Act
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="action-grid">
+                      <button
+                        className="danger-button"
+                        disabled={loading || !game.available_actions.includes("fold")}
+                        onClick={() => handlePlayerAction("fold")}
+                      >
+                        Fold
+                      </button>
 
-                  <button
-                    disabled={loading || !game.available_actions.includes("check")}
-                    onClick={() => handlePlayerAction("check")}
-                  >
-                    Check
-                  </button>
+                      <button
+                        disabled={loading || !game.available_actions.includes("check")}
+                        onClick={() => handlePlayerAction("check")}
+                      >
+                        Check
+                      </button>
 
-                  <button
-                    disabled={loading || !game.available_actions.includes("call")}
-                    onClick={() => handlePlayerAction("call")}
-                  >
-                    Call ${game.call_amount}
-                  </button>
-                </div>
+                      <button
+                        disabled={loading || !game.available_actions.includes("call")}
+                        onClick={() => handlePlayerAction("call")}
+                      >
+                        Call ${game.call_amount}
+                      </button>
+                    </div>
 
-                <div className="raise-box">
-                  <label htmlFor="raiseTo">Raise To</label>
-                  <input
-                    id="raiseTo"
-                    type="number"
-                    min={game.highest_bet + game.big_blind}
-                    value={raiseTo}
-                    onChange={(event) => setRaiseTo(Number(event.target.value))}
-                  />
-                  <button
-                    disabled={loading || !game.available_actions.includes("raise")}
-                    onClick={() => handlePlayerAction("raise")}
-                  >
-                    Raise
-                  </button>
-                </div>
+                    <div className="raise-box">
+                      <label htmlFor="raiseTo">Raise To</label>
+                      <input
+                        id="raiseTo"
+                        type="number"
+                        min={game.highest_bet + game.big_blind}
+                        value={raiseTo}
+                        onChange={(event) => setRaiseTo(Number(event.target.value))}
+                      />
+                      <button
+                        disabled={loading || !game.available_actions.includes("raise")}
+                        onClick={() => handlePlayerAction("raise")}
+                      >
+                        Raise
+                      </button>
+                    </div>
+                  </>
+                )}
 
                 <button
                   className="wide-button secondary-button"
@@ -274,6 +294,21 @@ function App() {
               </p>
             )}
           </div>
+
+          {game?.ai_decision && (
+            <div className="panel-block ai-decision-card">
+              <h2>AI Decision</h2>
+              <div className="decision-row">
+                <span>Action</span>
+                <strong>{game.ai_decision.action}</strong>
+              </div>
+              <div className="decision-row">
+                <span>Confidence</span>
+                <strong>{Math.round(game.ai_decision.confidence * 100)}%</strong>
+              </div>
+              <p>{game.ai_decision.reason}</p>
+            </div>
+          )}
 
           <div className="panel-block">
             <h2>Current State</h2>

@@ -444,3 +444,45 @@ pre {
     grid-template-columns: 1fr;
   }
 }
+
+.ai-turn-box {
+  margin: 16px 0;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(45, 212, 191, 0.1);
+  border: 1px solid rgba(45, 212, 191, 0.25);
+}
+
+.ai-turn-box p {
+  margin: 0 0 14px;
+  color: #ccfbf1;
+  font-weight: 700;
+}
+
+.ai-decision-card {
+  border-color: rgba(45, 212, 191, 0.25);
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.12), rgba(255, 255, 255, 0.04));
+}
+
+.decision-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.decision-row span {
+  color: #94a3b8;
+}
+
+.decision-row strong {
+  color: #5eead4;
+  text-transform: capitalize;
+}
+
+.ai-decision-card p {
+  color: #cbd5e1;
+  line-height: 1.55;
+}

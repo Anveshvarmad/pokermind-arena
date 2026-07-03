@@ -51,6 +51,14 @@ export async function applyPlayerAction(
   return handleResponse(response);
 }
 
+export async function applyAiAction(gameId: string): Promise<GameState> {
+  const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/ai-action`, {
+    method: "POST",
+  });
+
+  return handleResponse(response);
+}
+
 export async function nextStreet(gameId: string): Promise<GameState> {
   const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/next-street`, {
     method: "POST",

@@ -48,6 +48,20 @@ def apply_action(game_id: str, payload: PlayerActionRequest):
         raise HTTPException(status_code=400, detail=str(error)) from error
 
 
+@router.post("/{game_id}/ai-action")
+def apply_ai_action(game_id: str):
+    try:
+        game = game_service.apply_ai_action(game_id)
+
+        if game is None:
+            raise HTTPException(status_code=404, detail="Game not found")
+
+        return game
+
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
 @router.post("/{game_id}/next-street")
 def next_street(game_id: str):
     try:
