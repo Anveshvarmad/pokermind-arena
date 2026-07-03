@@ -1,20 +1,10 @@
 import type { GameState, PlayerActionPayload } from "../types/game";
+import type { HistorySummary } from "../types/history";
 import type { SimulationResult, StrategyName } from "../types/simulation";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
 
-async function handleGameResponse(response: Response): Promise<GameState> {
-  const data = await response.json();
-
-  if (!response.ok) {
-    const message = data?.detail ?? "Something went wrong";
-    throw new Error(message);
-  }
-
-  return data;
-}
-
-async function handleSimulationResponse(response: Response): Promise<SimulationResult> {
+async function parseResponse<T>(response: Response): Promise<T> {
   const data = await response.json();
 
   if (!response.ok) {
@@ -39,13 +29,13 @@ export async function createGame(): Promise<GameState> {
     }),
   });
 
-  return handleGameResponse(response);
+  return parseResponse<GameState>(response);
 }
 
 export async function getGame(gameId: string): Promise<GameState> {
   const response = await fetch(`${API_BASE_URL}/api/games/${gameId}`);
 
-  return handleGameResponse(response);
+  return parseResponse<GameState>(response);
 }
 
 export async function applyPlayerAction(
@@ -60,7 +50,7 @@ export async function applyPlayerAction(
     body: JSON.stringify(payload),
   });
 
-  return handleGameResponse(response);
+  return parseResponse<GameState>(response);
 }
 
 export async function applyAiAction(gameId: string): Promise<GameState> {
@@ -68,7 +58,7 @@ export async function applyAiAction(gameId: string): Promise<GameState> {
     method: "POST",
   });
 
-  return handleGameResponse(response);
+  return parseResponse<GameState>(response);
 }
 
 export async function applyMonteCarloAction(gameId: string): Promise<GameState> {
@@ -76,7 +66,7 @@ export async function applyMonteCarloAction(gameId: string): Promise<GameState> 
     method: "POST",
   });
 
-  return handleGameResponse(response);
+  return parseResponse<GameState>(response);
 }
 
 export async function applyMctsAction(gameId: string): Promise<GameState> {
@@ -84,7 +74,7 @@ export async function applyMctsAction(gameId: string): Promise<GameState> {
     method: "POST",
   });
 
-  return handleGameResponse(response);
+  return parseResponse<GameState>(response);
 }
 
 export async function nextStreet(gameId: string): Promise<GameState> {
@@ -92,7 +82,7 @@ export async function nextStreet(gameId: string): Promise<GameState> {
     method: "POST",
   });
 
-  return handleGameResponse(response);
+  return parseResponse<GameState>(response);
 }
 
 export async function resetGame(gameId: string): Promise<GameState> {
@@ -100,7 +90,7 @@ export async function resetGame(gameId: string): Promise<GameState> {
     method: "POST",
   });
 
-  return handleGameResponse(response);
+  return parseResponse<GameState>(response);
 }
 
 export async function runSimulation(payload: {
@@ -116,5 +106,11 @@ export async function runSimulation(payload: {
     body: JSON.stringify(payload),
   });
 
-  return handleSimulationResponse(response);
+  return parseResponse<SimulationResult>(response);
+}
+
+export async function fetchHistorySummary(): Promise<HistorySummary> {
+  const response = await fetch(`${API_BASE_URL}/api/history/summary`);
+
+  return parseResponse<HistorySummary>(response);
 }
