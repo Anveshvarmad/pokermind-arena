@@ -1,3 +1,4 @@
+from app.ai.mcts_bot import MCTSPokerBot
 from app.ai.monte_carlo_bot import MonteCarloPokerBot
 from app.ai.rule_based_bot import RuleBasedPokerBot
 from app.core.game_state import PlayerAction, Street
@@ -9,6 +10,7 @@ class GameService:
         self.games: dict[str, PokerTable] = {}
         self.rule_bot = RuleBasedPokerBot()
         self.monte_carlo_bot = MonteCarloPokerBot(simulations=500)
+        self.mcts_bot = MCTSPokerBot(iterations=700)
 
     def create_game(
         self,
@@ -91,6 +93,28 @@ class GameService:
         self._validate_ai_turn(state)
 
         decision = self.monte_carlo_bot.decide(state)
+
+        state.apply_action(
+            player_index=state.current_player_index,
+            action=decision.action,
+            amount=decision.amount,
+        )
+
+        response = table.get_state()
+        response["ai_decision"] = decision.to_dict()
+
+        return response
+
+    def apply_mcts_action(self, game_id: str) -> dict | None:
+        table = self.games.get(game_id)
+
+        if table is None:
+            return None
+
+        state = table.state
+        self._validate_ai_turn(state)
+
+        decision = self.mcts_bot.decide(state)
 
         state.apply_action(
             player_index=state.current_player_index,

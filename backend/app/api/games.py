@@ -76,6 +76,20 @@ def apply_monte_carlo_action(game_id: str):
         raise HTTPException(status_code=400, detail=str(error)) from error
 
 
+@router.post("/{game_id}/mcts-action")
+def apply_mcts_action(game_id: str):
+    try:
+        game = game_service.apply_mcts_action(game_id)
+
+        if game is None:
+            raise HTTPException(status_code=404, detail="Game not found")
+
+        return game
+
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
 @router.post("/{game_id}/next-street")
 def next_street(game_id: str):
     try:

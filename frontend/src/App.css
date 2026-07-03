@@ -496,3 +496,38 @@ pre {
 .bot-action-grid button:nth-child(2) {
   background: linear-gradient(135deg, #a7f3d0, #2dd4bf);
 }
+
+.bot-action-grid button:nth-child(3) {
+  background: linear-gradient(135deg, #ddd6fe, #8b5cf6);
+  color: #1e1b4b;
+}
+
+.tree-summary {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tree-summary h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  color: #ddd6fe;
+}
+
+.tree-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 13px;
+}
+
+.tree-row span {
+  color: #cbd5e1;
+  text-transform: capitalize;
+}
+
+.tree-row strong {
+  color: #c4b5fd;
+}

@@ -3,6 +3,7 @@ import "./App.css";
 
 import {
   applyAiAction,
+  applyMctsAction,
   applyMonteCarloAction,
   applyPlayerAction,
   createGame,
@@ -111,6 +112,12 @@ function App() {
     runAction(() => applyMonteCarloAction(game.game_id));
   }
 
+  function handleMctsAction() {
+    if (!game) return;
+
+    runAction(() => applyMctsAction(game.game_id));
+  }
+
   function handlePlayerAction(action: PokerAction) {
     if (!game) return;
 
@@ -141,8 +148,8 @@ function App() {
           <p className="eyebrow">AI Poker Simulator</p>
           <h1>PokerMind Arena</h1>
           <p className="subtitle">
-            Play through a Texas Hold&apos;em hand, inspect each state transition,
-            and compare rule-based decisions against Monte Carlo equity decisions.
+            Play through a Texas Hold&apos;em hand and compare rule-based,
+            Monte Carlo, and MCTS poker strategies.
           </p>
         </div>
 
@@ -249,6 +256,10 @@ function App() {
                       <button disabled={loading} onClick={handleMonteCarloAction}>
                         Monte Carlo Bot Act
                       </button>
+
+                      <button disabled={loading} onClick={handleMctsAction}>
+                        MCTS Bot Act
+                      </button>
                     </div>
                   </div>
                 ) : (
@@ -337,6 +348,13 @@ function App() {
                 </div>
               )}
 
+              {typeof game.ai_decision.estimated_value === "number" && (
+                <div className="decision-row">
+                  <span>MCTS Value</span>
+                  <strong>{game.ai_decision.estimated_value}</strong>
+                </div>
+              )}
+
               {game.ai_decision.simulations && (
                 <div className="decision-row">
                   <span>Simulations</span>
@@ -344,7 +362,31 @@ function App() {
                 </div>
               )}
 
+              {game.ai_decision.iterations && (
+                <div className="decision-row">
+                  <span>Iterations</span>
+                  <strong>{game.ai_decision.iterations}</strong>
+                </div>
+              )}
+
               <p>{game.ai_decision.reason}</p>
+
+              {game.ai_decision.tree_summary && (
+                <div className="tree-summary">
+                  <h3>MCTS Tree Summary</h3>
+
+                  {game.ai_decision.tree_summary.map((item, index) => (
+                    <div className="tree-row" key={`${item.action}-${index}`}>
+                      <span>
+                        {item.action}
+                        {item.amount ? ` $${item.amount}` : ""}
+                      </span>
+                      <span>{item.visits} visits</span>
+                      <strong>{item.average_value}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
