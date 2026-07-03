@@ -1,3 +1,4 @@
+from app.ai.monte_carlo_bot import MonteCarloPokerBot
 from app.ai.rule_based_bot import RuleBasedPokerBot
 from app.core.game_state import PlayerAction, Street
 from app.core.table import PokerTable
@@ -6,7 +7,8 @@ from app.core.table import PokerTable
 class GameService:
     def __init__(self):
         self.games: dict[str, PokerTable] = {}
-        self.bot = RuleBasedPokerBot()
+        self.rule_bot = RuleBasedPokerBot()
+        self.monte_carlo_bot = MonteCarloPokerBot(simulations=500)
 
     def create_game(
         self,
@@ -62,12 +64,33 @@ class GameService:
             return None
 
         state = table.state
-        current_player = state.players[state.current_player_index]
+        self._validate_ai_turn(state)
 
-        if "ai" not in current_player.name.lower() and "bot" not in current_player.name.lower():
-            raise ValueError("It is not the AI bot's turn")
+        decision = self.rule_bot.decide(state)
 
-        decision = self.bot.decide(state)
+        state.apply_action(
+            player_index=state.current_player_index,
+            action=decision.action,
+            amount=decision.amount,
+        )
+
+        response = table.get_state()
+        ai_decision = decision.to_dict()
+        ai_decision["strategy"] = "rule_based"
+        response["ai_decision"] = ai_decision
+
+        return response
+
+    def apply_monte_carlo_action(self, game_id: str) -> dict | None:
+        table = self.games.get(game_id)
+
+        if table is None:
+            return None
+
+        state = table.state
+        self._validate_ai_turn(state)
+
+        decision = self.monte_carlo_bot.decide(state)
 
         state.apply_action(
             player_index=state.current_player_index,
@@ -109,6 +132,12 @@ class GameService:
 
         state = table.start_hand()
         return state.to_dict()
+
+    def _validate_ai_turn(self, state):
+        current_player = state.players[state.current_player_index]
+
+        if "ai" not in current_player.name.lower() and "bot" not in current_player.name.lower():
+            raise ValueError("It is not the AI bot's turn")
 
 
 game_service = GameService()

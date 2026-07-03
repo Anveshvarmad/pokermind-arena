@@ -486,3 +486,13 @@ pre {
   color: #cbd5e1;
   line-height: 1.55;
 }
+
+.bot-action-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.bot-action-grid button:nth-child(2) {
+  background: linear-gradient(135deg, #a7f3d0, #2dd4bf);
+}

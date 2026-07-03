@@ -3,6 +3,7 @@ import "./App.css";
 
 import {
   applyAiAction,
+  applyMonteCarloAction,
   applyPlayerAction,
   createGame,
   nextStreet,
@@ -98,10 +99,16 @@ function App() {
     runAction(() => nextStreet(game.game_id));
   }
 
-  function handleAiAction() {
+  function handleRuleBotAction() {
     if (!game) return;
 
     runAction(() => applyAiAction(game.game_id));
+  }
+
+  function handleMonteCarloAction() {
+    if (!game) return;
+
+    runAction(() => applyMonteCarloAction(game.game_id));
   }
 
   function handlePlayerAction(action: PokerAction) {
@@ -117,7 +124,9 @@ function App() {
   }
 
   const currentPlayer = game?.players[game.current_player_index];
-  const isAiTurn = currentPlayer?.name.toLowerCase().includes("ai") || currentPlayer?.name.toLowerCase().includes("bot");
+  const isAiTurn =
+    currentPlayer?.name.toLowerCase().includes("ai") ||
+    currentPlayer?.name.toLowerCase().includes("bot");
 
   const canMoveStreet =
     game &&
@@ -133,7 +142,7 @@ function App() {
           <h1>PokerMind Arena</h1>
           <p className="subtitle">
             Play through a Texas Hold&apos;em hand, inspect each state transition,
-            and let a rule-based AI bot make explainable poker decisions.
+            and compare rule-based decisions against Monte Carlo equity decisions.
           </p>
         </div>
 
@@ -230,10 +239,17 @@ function App() {
 
                 {isAiTurn ? (
                   <div className="ai-turn-box">
-                    <p>The AI bot is waiting to act.</p>
-                    <button className="wide-button" disabled={loading} onClick={handleAiAction}>
-                      Let AI Act
-                    </button>
+                    <p>Choose which AI strategy should act for the bot.</p>
+
+                    <div className="bot-action-grid">
+                      <button disabled={loading} onClick={handleRuleBotAction}>
+                        Rule Bot Act
+                      </button>
+
+                      <button disabled={loading} onClick={handleMonteCarloAction}>
+                        Monte Carlo Bot Act
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -298,14 +314,36 @@ function App() {
           {game?.ai_decision && (
             <div className="panel-block ai-decision-card">
               <h2>AI Decision</h2>
+
+              <div className="decision-row">
+                <span>Strategy</span>
+                <strong>{game.ai_decision.strategy?.replace("_", " ") ?? "rule based"}</strong>
+              </div>
+
               <div className="decision-row">
                 <span>Action</span>
                 <strong>{game.ai_decision.action}</strong>
               </div>
+
               <div className="decision-row">
                 <span>Confidence</span>
                 <strong>{Math.round(game.ai_decision.confidence * 100)}%</strong>
               </div>
+
+              {typeof game.ai_decision.equity === "number" && (
+                <div className="decision-row">
+                  <span>Equity</span>
+                  <strong>{Math.round(game.ai_decision.equity * 100)}%</strong>
+                </div>
+              )}
+
+              {game.ai_decision.simulations && (
+                <div className="decision-row">
+                  <span>Simulations</span>
+                  <strong>{game.ai_decision.simulations}</strong>
+                </div>
+              )}
+
               <p>{game.ai_decision.reason}</p>
             </div>
           )}

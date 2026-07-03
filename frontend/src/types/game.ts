@@ -19,10 +19,13 @@ export type Player = {
 };
 
 export type AiDecision = {
+  strategy?: "rule_based" | "monte_carlo";
   action: PokerAction;
   amount: number | null;
   confidence: number;
   reason: string;
+  equity?: number;
+  simulations?: number;
 };
 
 export type GameState = {

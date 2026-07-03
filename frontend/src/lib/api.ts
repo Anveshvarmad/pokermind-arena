@@ -59,6 +59,14 @@ export async function applyAiAction(gameId: string): Promise<GameState> {
   return handleResponse(response);
 }
 
+export async function applyMonteCarloAction(gameId: string): Promise<GameState> {
+  const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/monte-carlo-action`, {
+    method: "POST",
+  });
+
+  return handleResponse(response);
+}
+
 export async function nextStreet(gameId: string): Promise<GameState> {
   const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/next-street`, {
     method: "POST",
