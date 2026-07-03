@@ -3,6 +3,7 @@ from app.ai.monte_carlo_bot import MonteCarloPokerBot
 from app.ai.rule_based_bot import RuleBasedPokerBot
 from app.core.game_state import PlayerAction, Street
 from app.core.table import PokerTable
+from app.services.history_service import history_service
 
 
 class GameService:
@@ -29,7 +30,10 @@ class GameService:
         state = table.start_hand()
         self.games[state.game_id] = table
 
-        return state.to_dict()
+        response = state.to_dict()
+        history_service.save_game_state(response)
+
+        return response
 
     def get_game(self, game_id: str) -> dict | None:
         table = self.games.get(game_id)
@@ -57,7 +61,10 @@ class GameService:
             amount=amount,
         )
 
-        return table.get_state()
+        response = table.get_state()
+        history_service.save_game_state(response)
+
+        return response
 
     def apply_ai_action(self, game_id: str) -> dict | None:
         table = self.games.get(game_id)
@@ -81,6 +88,9 @@ class GameService:
         ai_decision["strategy"] = "rule_based"
         response["ai_decision"] = ai_decision
 
+        history_service.save_game_state(response)
+        history_service.save_ai_decision(game_id, ai_decision)
+
         return response
 
     def apply_monte_carlo_action(self, game_id: str) -> dict | None:
@@ -102,6 +112,9 @@ class GameService:
 
         response = table.get_state()
         response["ai_decision"] = decision.to_dict()
+
+        history_service.save_game_state(response)
+        history_service.save_ai_decision(game_id, response["ai_decision"])
 
         return response
 
@@ -125,6 +138,9 @@ class GameService:
         response = table.get_state()
         response["ai_decision"] = decision.to_dict()
 
+        history_service.save_game_state(response)
+        history_service.save_ai_decision(game_id, response["ai_decision"])
+
         return response
 
     def next_street(self, game_id: str) -> dict | None:
@@ -146,7 +162,10 @@ class GameService:
         else:
             raise ValueError("Cannot move to next street from current state")
 
-        return table.get_state()
+        response = table.get_state()
+        history_service.save_game_state(response)
+
+        return response
 
     def reset_game(self, game_id: str) -> dict | None:
         table = self.games.get(game_id)
@@ -155,7 +174,10 @@ class GameService:
             return None
 
         state = table.start_hand()
-        return state.to_dict()
+        response = state.to_dict()
+        history_service.save_game_state(response)
+
+        return response
 
     def _validate_ai_turn(self, state):
         current_player = state.players[state.current_player_index]

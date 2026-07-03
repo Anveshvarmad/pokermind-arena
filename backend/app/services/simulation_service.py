@@ -4,6 +4,7 @@ from collections import Counter
 from app.core.card import Card, Rank, Suit
 from app.core.deck import Deck
 from app.core.hand_evaluator import HandCategory, HandEvaluator
+from app.services.history_service import history_service
 
 
 class SimulationService:
@@ -135,7 +136,7 @@ class SimulationService:
                 }
             )
 
-        return {
+        result = {
             "hands": hands,
             "player_a_strategy": player_a_strategy,
             "player_b_strategy": player_b_strategy,
@@ -160,6 +161,10 @@ class SimulationService:
             },
             "recent_hands": hand_results[-10:],
         }
+
+        history_service.save_simulation(result)
+
+        return result
 
     def _choose_action(
         self,
